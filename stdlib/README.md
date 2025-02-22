@@ -12,15 +12,15 @@ The second goal can be achieved because calls to procedures in the standard libr
 ## Available modules
 Currently, Miden standard library contains just a few modules, which are listed below. Over time, we plan to add many more modules which will include various cryptographic primitives, additional numeric data types and operations, and many others.
 
-- [std::crypto::hashes::blake3](./docs/blake3_hashes.md)
-- [std::crypto::hashes::keccak256](./docs/keccak256_hashes.md)
-- [std::crypto::hashes::sha256](./docs/sha256_hashes.md)
-- [std::crypto::fri::frie2f4](./docs/ext2fri_fri.md)
-- [std::math::u256](./docs/u256_math.md)
-- [std::math::u64](./docs/u64_math.md)
-- [std::math::secp256k1](./docs/secp256k1_math.md)
-- [std::mem](./docs/mem_std.md)
-- [std::sys](./docs/sys_std.md)
+- [std::crypto::hashes::blake3](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/crypto/hashes/blake3.masm)
+- [std::crypto::hashes::keccak256](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/crypto/hashes/keccak256.masm)
+- [std::crypto::hashes::sha256](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/crypto/hashes/sha256.masm)
+- [std::crypto::fri::frie2f4](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/crypto/fri/frie2f4.masm)
+- [std::math::u256](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/math/u256.masm)
+- [std::math::u64](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/math/u64.masm)
+- [std::math::secp256k1](https://github.com/0xPolygonMiden/miden-vm/tree/main/stdlib/asm/math/secp256k1)
+- [std::mem](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/mem.masm)
+- [std::sys](https://github.com/0xPolygonMiden/miden-vm/blob/main/stdlib/asm/sys.masm)
 
 ## Status
 At this point, all implementations listed above are considered to be experimental and are subject to change.
