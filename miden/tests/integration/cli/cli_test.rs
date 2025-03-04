@@ -35,6 +35,34 @@ fn cli_run() -> Result<(), Box<dyn std::error::Error>> {
 
     let output = cmd.unwrap();
 
+    println!("Output: {:?}", output);
+
+    // This tests what we want. Actually it outputs X steps in Y ms.
+    // However we the X and the Y can change in future versions.
+    // There is no other 'steps in' in the output
+    output.assert().stdout(predicate::str::contains("VM cycles"));
+
+    Ok(())
+}
+
+#[test]
+// Tt test might be an overkill to test only that the 'run' cli command
+// outputs steps and ms.
+fn cli_run_masp() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = bin_under_test().command();
+
+    cmd.arg("run")
+        .arg("-a")
+        .arg("./masm-examples/fib/fib.masm")
+        .arg("-p")
+        .arg("./tests/integration/cli/data/is_prime.masp")
+        .arg("-i")
+        .arg("./tests/integration/cli/data/inputs.inputs");
+
+    let output = cmd.unwrap();
+
+    println!("Output: {:?}", output);
+
     // This tests what we want. Actually it outputs X steps in Y ms.
     // However we the X and the Y can change in future versions.
     // There is no other 'steps in' in the output

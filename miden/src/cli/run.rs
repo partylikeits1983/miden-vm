@@ -1,11 +1,15 @@
-use std::{path::PathBuf, time::Instant};
+use std::{fs, path::PathBuf, time::Instant};
 
 use assembly::diagnostics::{IntoDiagnostic, Report, WrapErr};
 use clap::Parser;
 use miden_vm::internal::InputFile;
 use processor::{DefaultHost, ExecutionOptions, ExecutionTrace};
+use prover::{utils::Deserializable, StackInputs};
 use stdlib::StdLibrary;
 use tracing::instrument;
+
+use package::Package;
+use vm_core::Felt;
 
 use super::data::{Libraries, OutputFile, ProgramFile};
 
@@ -15,6 +19,10 @@ pub struct RunCmd {
     /// Path to .masm assembly file
     #[clap(short = 'a', long = "assembly", value_parser)]
     assembly_file: PathBuf,
+
+    /// Path to .masp package file
+    #[clap(short = 'p', long = "package", value_parser)]
+    package_file: Option<PathBuf>,
 
     /// Number of cycles the program is expected to consume
     #[clap(short = 'e', long = "exp-cycles", default_value = "64")]
@@ -52,12 +60,20 @@ pub struct RunCmd {
 impl RunCmd {
     pub fn execute(&self) -> Result<(), Report> {
         println!("===============================================================================");
-        println!("Run program: {}", self.assembly_file.display());
+        if let Some(package_file) = &self.package_file {
+            // If a --package/-p was provided, show that
+            println!("Running from .masp package: {}", package_file.display());
+        } else {
+            // Otherwise fallback to .masm
+            println!("Running from .masm assembly: {}", self.assembly_file.display());
+        }
         println!("-------------------------------------------------------------------------------");
 
         let now = Instant::now();
 
-        let (trace, program_hash) = run_program(self)?;
+        run_package(self);
+
+        let (trace, program_hash) = run_assembly(self)?;
 
         println!(
             "Executed the program with hash {} in {} ms",
@@ -107,8 +123,56 @@ impl RunCmd {
 // HELPER FUNCTIONS
 // ================================================================================================
 
-#[instrument(name = "run_program", skip_all)]
-fn run_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Report> {
+#[instrument(name = "run_package", skip_all)]
+fn run_package(params: &RunCmd) -> Result<(), Report> {
+    let package_file = params
+        .package_file
+        .as_ref()
+        .expect("Expected a package file, but none was provided");
+
+    let bytes = fs::read(package_file)
+        .into_diagnostic()
+        .wrap_err("Failed to read package file")?;
+
+    let package = Package::read_from_bytes(&bytes)
+        .into_diagnostic()
+        .wrap_err("Failed to deserialize package")?;
+
+    println!("package digest: {:?}", package.digest());
+
+    let program_arc: std::sync::Arc<vm_core::Program> = package.unwrap_program();
+    let program = &*program_arc;
+
+    let stack_inputs = StackInputs::new(vec![Felt::new(11)]).unwrap();
+
+    let mut host = DefaultHost::default();
+
+    let execution_options = ExecutionOptions::new(
+        Some(params.max_cycles),
+        params.expected_cycles,
+        params.trace,
+        params.debug,
+    )
+    .into_diagnostic()?;
+
+    // execute program and generate outputs
+    let trace = processor::execute(&program, stack_inputs, &mut host, execution_options)
+        .into_diagnostic()
+        .wrap_err("Failed to generate execution trace")?;
+
+    println!("\n");
+    println!("\n");
+
+    println!("output: {:?}", trace.stack_outputs());
+
+    println!("\n");
+    println!("\n");
+
+    Ok(())
+}
+
+#[instrument(name = "run_assembly", skip_all)]
+fn run_assembly(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Report> {
     for lib in &params.library_paths {
         if !lib.is_file() {
             let name = lib.display();
